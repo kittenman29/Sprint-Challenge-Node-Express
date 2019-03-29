@@ -15,9 +15,10 @@ router.get('/', (req, res) => {
     })
 });
 
+
 // Get projects by ID
 router.get('/:id', async (req, res) => {
-    const project = await Projects.get(req.params.id);
+    const project = await Projects.get(req.params.id).catch(res.status(500).json({ error: "Await error" }));
     console.log(req.params.id);
     try {
         if(project) {
@@ -73,44 +74,63 @@ router.post('/newproject', async (req, res) => {
 })
 
 // Delete actions by ID
-router.delete('/:id', (req, res) => {
-    const id = req.params.id;
-    console.log(req.params.id);
-    Projects.remove(id)
-        .then((id) => {
-            if(id){
-                res.status(200).json({message: "success, removed from database"})
-            } else {
-                res.status(404).json({errorMessage: "error removing project from database"})
-            }
-        })
-        .catch(error => {
-            res.status(500).json({error: "there was an error processing the delete request"})
-        })
-})
+router.delete('/:id', async (req, res) => {
+    try {
+      const count = await Projects.remove(req.params.id);
+      if (count > 0) {
+        res.status(200).json({ message: 'The project has been deleted successfully' });
+      } else {
+        res.status(404).json({ message: 'The project could not be found' });
+      }
+    } catch (error) {
+      // log error to database
+      console.log(error);
+      res.status(500).json({
+        message: 'Error removing the project',
+      });
+    }
+  });
 
 // Edit an action by ID
 router.put('/:id', async (req, res) => {
-    const id = req.params.id;
-    const changes = req.body;
-    console.log(id, changes);
     try {
-        if (!changes) {
-            res.status(400).json({error: 'You are missing a project description, or name' })
-        }
-        console.log(changes);
-        await Projects.update(id, changes)
-        .then(changes => {
-            res.status(201).json(changes);
-        })
-        .catch(error => {
-            res.status(500).json({error: "There was an error editing the project" })
-        })
+      const project = await Projects.update(req.params.id, req.body);
+      if (!project) {
+          res.status(404).json({ message: 'The project could not be found' });
+        } else {
+        res.status(200).json(project);
+      }
+    } catch (error) {
+      // log error to database
+      console.log(error);
+      res.status(500).json({
+        message: 'Error updating the project',
+      });
     }
-    catch(error) {
-        console.log(error);
-        res.status(500).json({error: "you fucked up somewhere along the line" })
-    }
-})
+  });
+
+// Edit an action by ID
+// router.put('/:id', async (req, res) => {
+//     const id = req.params.id;
+//     const changes = req.body;
+//     console.log(id, changes, req.params.id);
+//     try {
+//         if (!changes) {
+//             res.status(400).json({error: 'You are missing a project description, or name' })
+//         }
+//         // console.log(changes);
+//         await Projects.update(id, changes)
+//         .then(changes => {
+//             res.status(201).json(changes);
+//         })
+//         .catch(error => {
+//             res.status(500).json({error: "There was an error editing the project" })
+//         })
+//     }
+//     catch(error) {
+//         console.log(error);
+//         res.status(500).json({error: "you fucked up somewhere along the line" })
+//     }
+// })
 
 module.exports = router;

@@ -17,7 +17,7 @@ router.get('/', (req, res) => {
 
 // Get actions by ID
 router.get('/:id', async (req, res) => {
-    const action = await Actions.get(req.params.id);
+    const action = await Actions.get(req.params.id).catch(res.status(500).json({ error: "Await error" }));
     console.log(req.params.id);
     try {
         if(action) {
@@ -59,44 +59,40 @@ router.post('/newaction', async (req, res) => {
 })
 
 // Delete actions by ID
-router.delete('/:id', (req, res) => {
-    const id = req.params.id;
-    console.log(req.params.id);
-    Actions.remove(id)
-        .then((id) => {
-            if(id){
-                res.status(200).json(`message: ${id} removed from database`)
-            } else {
-                res.status(404).json({errorMessage: "error removing id from database"})
-            }
-        })
-        .catch(error => {
-            res.status(500).json({error: "there was an error processing the delete request"})
-        })
-})
+router.delete('/:id', async (req, res) => {
+    try {
+      const count = await Actions.remove(req.params.id);
+      if (count > 0) {
+        res.status(200).json({ message: 'The action has been deleted successfully' });
+      } else {
+        res.status(404).json({ message: 'The action could not be found' });
+      }
+    } catch (error) {
+      // log error to database
+      console.log(error);
+      res.status(500).json({
+        message: 'Error removing the action',
+      });
+    }
+  });
 
 // Edit an action by ID
 router.put('/:id', async (req, res) => {
-    const id = req.params.id;
-    const changes = req.body;
-    console.log(id, changes);
     try {
-        if (!changes) {
-            res.status(400).json({error: 'You are missing a project id, description, or notes' })
-        }
-        console.log(changes);
-        await Actions.update(id, changes)
-        .then(changes => {
-            res.status(201).json(changes);
-        })
-        .catch(error => {
-            res.status(500).json({error: "There was an error editing the action" })
-        })
+      const action = await Actions.update(req.params.id, req.body);
+      if (action) {
+        res.status(200).json({message: "action updated successfully"});
+      } else {
+        res.status(404).json({ message: 'The action could not be found' });
+      }
+    } catch (error) {
+      // log error to database
+      console.log(error);
+      res.status(500).json({
+        message: 'Error updating the action',
+      });
     }
-    catch(error) {
-        console.log(error);
-        res.status(500).json({error: "you fucked up somewhere along the line" })
-    }
-})
+  });
+
 
 module.exports = router;
