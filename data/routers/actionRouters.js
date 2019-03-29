@@ -31,24 +31,6 @@ router.get('/:id', async (req, res) => {
     }
 })
 
-// // Get actions by project_id
-
-// router.get('/:id/:projectId', async (req, res) => {
-//     const action = await Actions.get(req.params.id);
-//     const projectId = await Actions.get(req.params.project_id);
-//     console.log(req.params.project_id);
-//     try {
-//         if(action && projectId) {
-//             res.status(200).json(action, projectId);
-//         } else {
-//             res.status(404).json({ message: "The project id you are looking for doesn't exist" });
-//         }
-//     }
-//     catch {
-//         res.status(500).json({ error: "The project id information could not be retrieved" });
-//     }
-// })
-
 // Add new action
 router.post('/newaction', async (req, res) => {
     const { project_id, description, notes } = req.body;
@@ -93,17 +75,17 @@ router.delete('/:id', (req, res) => {
         })
 })
 
-// Edit an action
+// Edit an action by ID
 router.put('/:id', async (req, res) => {
     const id = req.params.id;
     const changes = req.body;
     console.log(id, changes);
     try {
-        if (!project_id || !description || !notes) {
+        if (!changes) {
             res.status(400).json({error: 'You are missing a project id, description, or notes' })
         }
         console.log(changes);
-        Actions.update(changes)
+        await Actions.update(id, changes)
         .then(changes => {
             res.status(201).json(changes);
         })
@@ -116,14 +98,5 @@ router.put('/:id', async (req, res) => {
         res.status(500).json({error: "you fucked up somewhere along the line" })
     }
 })
-
-
-
-
-
-
-
-
-
 
 module.exports = router;
